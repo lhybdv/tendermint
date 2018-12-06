@@ -470,7 +470,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	defer tearDown(t)
 	// TODO: increase genesis voting power to sth. more  close to MaxTotalVotingPower with changes that
 	// fix with tendermint/issues/2960; currently, the last iteration would take forever though
-	genesisVotingPower := int64(100)
+	genesisVotingPower := int64(types.MaxTotalVotingPower / 100000000000000)
 	genesisPubKey := ed25519.GenPrivKey().PubKey()
 	// fmt.Println("genesis addr: ", genesisPubKey.Address())
 	genesisVal := &types.Validator{Address: genesisPubKey.Address(), PubKey: genesisPubKey, VotingPower: genesisVotingPower}
@@ -521,7 +521,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 	updatedState, err := updateState(oldState, blockID, &block.Header, abciResponses, validatorUpdates)
 
 	lastState := updatedState
-	for i := 0; i < 12; i++ {
+	for i := 0; i < 200; i++ {
 		// no updates:
 		abciResponses := &ABCIResponses{
 			EndBlock: &abci.ResponseEndBlock{ValidatorUpdates: nil},
@@ -533,7 +533,7 @@ func TestLargeGenesisValidator(t *testing.T) {
 		blockID := types.BlockID{block.Hash(), block.MakePartSet(testPartSize).Header()}
 
 		updatedStateInner, err := updateState(lastState, blockID, &block.Header, abciResponses, validatorUpdates)
-		fmt.Println(updatedStateInner.NextValidators)
+		//fmt.Println(updatedStateInner.NextValidators)
 		lastState = updatedStateInner
 	}
 	// set state to last state of above iteration
@@ -602,10 +602,26 @@ func TestLargeGenesisValidator(t *testing.T) {
 		}
 		count++
 	}
+	updatedState = curState
 	// first proposer change happens after this many iters; we probably want to lower this number:
 	// TODO: change with https://github.com/tendermint/tendermint/issues/2960
-	firstProposerChangeExpectedAfter := 438
+	firstProposerChangeExpectedAfter := 1
 	assert.Equal(t, firstProposerChangeExpectedAfter, count)
+	// TODO: after that we should see cyclical behavior again?
+	for i := 0; i < 100; i++ {
+		// no updates:
+		abciResponses := &ABCIResponses{
+			EndBlock: &abci.ResponseEndBlock{ValidatorUpdates: nil},
+		}
+		validatorUpdates, err := types.PB2TM.ValidatorUpdates(abciResponses.EndBlock.ValidatorUpdates)
+		require.NoError(t, err)
+
+		block := makeBlock(updatedState, updatedState.LastBlockHeight+1)
+		blockID := types.BlockID{block.Hash(), block.MakePartSet(testPartSize).Header()}
+
+		updatedState, err = updateState(updatedState, blockID, &block.Header, abciResponses, validatorUpdates)
+		fmt.Println(updatedState.NextValidators.Proposer)
+	}
 }
 
 func TestStoreLoadValidatorsIncrementsProposerPriority(t *testing.T) {
