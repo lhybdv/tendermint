@@ -15,7 +15,10 @@ const (
 	CLevelDBBackend  DBBackendType = "cleveldb"
 	GoLevelDBBackend DBBackendType = "goleveldb"
 	MemDBBackend     DBBackendType = "memdb"
-	FSDBBackend      DBBackendType = "fsdb" // using the filesystem naively
+    FSDBBackend      DBBackendType = "fsdb" // using the filesystem naively
+
+    // TriasDBBackend is a DB implementation for Trias
+    TriasDBBackend   DBBackendType = "triasdb"
 )
 
 type dbCreator func(name string, dir string) (DB, error)
