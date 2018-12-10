@@ -1,17 +1,22 @@
 package db
 
 import (
+	"fmt"
+	"github.com/tecbot/gorocksdb"
 	"sync"
-	"trias/filestore/file"
+    "github.com/trias/filestore/file"
 )
 
 func init() {
+    db := gorocksdb.DB{}
+    fmt.Println(db)
 	registerDBCreator(TriasDBBackend, func(name string, dir string) (DB, error) {
 		// just handle block store with TriasDB, others with GoLevelDB
 		if name == "blockstore" {
 			return NewTriasDB(), nil
 		}
-		return NewGoLevelDB(name, dir)
+        // return NewGoLevelDB(name, dir)
+        return NewRocksDB(name, dir)
 	}, false)
 }
 

@@ -19,6 +19,7 @@ const (
 
     // TriasDBBackend is a DB implementation for Trias
     TriasDBBackend   DBBackendType = "triasdb"
+    RocksDBBackend   DBBackendType = "rocksdb"
 )
 
 type dbCreator func(name string, dir string) (DB, error)
